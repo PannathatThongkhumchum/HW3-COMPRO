@@ -1,0 +1,55 @@
+def analyze_user_activity(log_file_path: str) -> dict:
+    actions = {}
+    durations = {}
+    users = set()
+    try:
+        with open(log_file_path, "r", encoding="utf-8") as file:
+            for line in file:
+                parts = line.strip().split()
+                if len(parts) != 4:
+                    continue
+
+                _, user, action, duration_str = parts
+                try:
+                    duration = int(duration_str)
+                except ValueError:
+                    continue
+                users.add(user)
+                if action not in actions:
+                    actions[action] = 0
+                actions[action] += 1
+
+                if action in {"login", "logout"}:
+                    if user not in durations:
+                        durations[user] = 0
+                    durations[user] += duration
+
+    except FileNotFoundError:
+        return {
+            "total_users": 0,
+            "action_counts": {},
+            "most_active_user": None,
+            "average_session_time": 0.0,
+        }
+
+    total_users = len(users)
+    most_active_user = max(durations, key=durations.get) if durations else None
+    avg_session_time = (sum(durations.values()) / total_users if total_users else 0.0)
+
+    return {
+        "action_counts": actions,
+        "average_session_time": round(avg_session_time, 2),
+        "most_active_user": most_active_user,
+        "total_users": total_users,
+    }
+
+
+if __name__ == "__main__":
+    result = analyze_user_activity("activity.log")
+    from pprint import pprint
+    pprint(result)
+
+# {'action_counts': {'login': 2, 'logout': 2, 'submit': 1, 'view': 2},
+#  'average_session_time': 160.0,
+#  'most_active_user': 'u002',
+#  'total_users': 2}
